@@ -1,1 +1,1 @@
-console.log('The value for FOO is:', process.env.FOO);
+console.log("The value for jwtSecretKey is:", process.env.jwtSecretKey);

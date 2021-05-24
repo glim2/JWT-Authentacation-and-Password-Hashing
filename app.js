@@ -1,33 +1,39 @@
-const express = require('express');
+const express = require("express");
 const app = express();
 app.use(express.json());
-const { models: { User }} = require('./db');
-const path = require('path');
-const jwt = require('jsonwebtoken')
+const {
+  models: { User },
+} = require("./db");
+const path = require("path");
+const jwt = require("jsonwebtoken");
 
-app.get('/', (req, res)=> res.sendFile(path.join(__dirname, 'index.html')));
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
 
-app.post('/api/auth', async(req, res, next)=> {
+app.post("/api/auth", async (req, res, next) => {
   try {
-    res.send({ token: await User.authenticate(jwt.sign({ userId: req.body.username }, 'randomkey', function(err, token) {
-        console.log(token);
-    }))});
-  }
-  catch(ex){
+    const username = req.body.username;
+    const password = req.body.password;
+    const userId = await User.authenticate({ username, password });
+    const token = jwt.sign({ userId: userId }, process.env.JWT);
+    res.send(token);
+  } catch (ex) {
     next(ex);
   }
 });
 
-app.get('/api/auth', async(req, res, next)=> {
+app.get("/api/auth", async (req, res, next) => {
   try {
-    res.send(await User.byToken(jwt.verify(req.headers.authorization, 'randomkey')));
-  }
-  catch(ex){
+    // console.log(req.headers.authorization);
+    const verify = jwt.verify(req.headers.authorization, process.env.JWT);
+    const authorizedUser = await User.byToken(verify.userId);
+
+    res.send(authorizedUser);
+  } catch (ex) {
     next(ex);
   }
 });
 
-app.use((err, req, res, next)=> {
+app.use((err, req, res, next) => {
   console.log(err);
   res.status(err.status || 500).send({ error: err.message });
 });
