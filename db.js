@@ -1,4 +1,5 @@
 const Sequelize = require('sequelize');
+const bcrypt = require('bcrypt');
 const { STRING } = Sequelize;
 const config = {
   logging: false
@@ -45,6 +46,11 @@ User.authenticate = async({ username, password })=> {
   error.status = 401;
   throw error;
 };
+
+User.beforeCreate(async (user) => {
+  const hashedPassword = await bcrypt.hash(user.password, 2);
+  user.password = hashedPassword;
+});
 
 const syncAndSeed = async()=> {
   await conn.sync({ force: true });

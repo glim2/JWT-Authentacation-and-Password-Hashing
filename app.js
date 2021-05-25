@@ -1,4 +1,5 @@
 const express = require("express");
+const bcrypt = require('bcrypt');
 const app = express();
 app.use(express.json());
 const {
@@ -13,9 +14,12 @@ app.post("/api/auth", async (req, res, next) => {
   try {
     const username = req.body.username;
     const password = req.body.password;
-    const userId = await User.authenticate({ username, password });
-    const token = jwt.sign({ userId: userId }, process.env.JWT);
-    res.send(token);
+    const user = await User.findOne({where: {username}})
+    if (bcrypt.compare(password, user.password)) {
+      const userId = await User.authenticate({ username, password: user.password });
+      const token = jwt.sign({ userId: userId }, process.env.JWT);
+      res.send(token);
+    }
   } catch (ex) {
     next(ex);
   }
@@ -23,7 +27,6 @@ app.post("/api/auth", async (req, res, next) => {
 
 app.get("/api/auth", async (req, res, next) => {
   try {
-    // console.log(req.headers.authorization);
     const verify = jwt.verify(req.headers.authorization, process.env.JWT);
     const authorizedUser = await User.byToken(verify.userId);
 
